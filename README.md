@@ -36,9 +36,8 @@ import fs from 'fs';
 import { extractor } from 'svg-extractor';
 
 const svg = fs.readFileSync(`big-file.svg`, 'utf8');
-
 const svge = extractor({
-  svg: ...ram of svg file...,
+  svg: svg,
   list: ['first', 'second', 'third'],
 });
 
