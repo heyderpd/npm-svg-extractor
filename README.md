@@ -2,6 +2,17 @@
 Create new svg file from another with a whitelist or blacklist of required id.
 Use in build to create small svg files.
 
+##First Steps
+* install node 6
+* touch .babelrc
+and write in:
+```javascript
+{
+  "presets": ["es2015"]
+}
+```
+* npm install svg-extractor
+
 ##To only return the itens in list
 Example:
 ```javascript

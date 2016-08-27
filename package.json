@@ -1,6 +1,6 @@
 {
   "name": "svg-extractor",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "SVG extractor module",
   "main": "extractor.js",
   "scripts": {
