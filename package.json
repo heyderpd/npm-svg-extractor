@@ -1,21 +1,30 @@
 {
   "name": "svg-extractor",
-  "version": "0.1.8",
+  "version": "0.3.0",
   "description": "SVG extractor module",
   "main": "extractor.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "svg", "extractor", "cleaner", "reductor", "remove", "html", "xml"
+    "svg",
+    "extractor",
+    "cleaner",
+    "reductor",
+    "remove",
+    "html",
+    "xml"
   ],
   "author": "NPM svg extractor <heyderpd@gmail.com> (http://heyderpd.github.io)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/heyderpd/npm-svg-extractor.git"
+    "url": "git+https://github.com/heyderpd/svg-extractor.git"
   },
   "bugs": {
-    "url": "https://github.com/heyderpd/npm-svg-extractor/issues"
+    "url": "https://github.com/heyderpd/svg-extractor/issues"
   },
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "html-parse-regex": "^0.4.0"
+  }
 }

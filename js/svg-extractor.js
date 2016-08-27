@@ -1,214 +1,180 @@
 
-function parseData(Text, Dep, Start = 0, R = 0) {
-  if(typeof(Text) !== 'string')
-    throw "Try Parse Object as a String";
-  if(R++ > 42)
-    throw "Limit recursive exceeded in f.parseData";
-
-  const Pattern = new RegExp('<(\\w+)(?:[^>]+?id="([^"]+))?([^>]+?\\/|\\b[\\w\\W]+?\\/\\1)>',
-                             'gim');
-  let Inner = [];
-  let result = null;
-  while ((result = Pattern.exec(Text)) !== null) {
-    // push to data.Objs
-    const  id = result[2] === undefined ? null : result[2];
-    const tag = result[1] === undefined ? null : result[1];
-    let Math = {
-        key: data.uKey++,
-      inner: null,
-        out: null,
-      start: Start +result.index,
-        end: Start +Pattern.lastIndex
-    }
-    let ref = Math.end -result[3].length -1;
-    Math.inner = parseData(result[3], Math.key, ref, R);
-    if(typeof(Math.inner) === 'string')
-      Math.out = getRefId(Math.inner);
-    Inner.push(Math);
-    // push to data.List
-    data.List[Math.key] = {
-          id: id,
-         tag: tag,
-        link: { up: [], down: [], out: [], in: [] },
-         Obj: Math,
-      remove: null
-    }
-    if(typeof(Math.inner) === 'object')
-      doEach(Math.inner, (key)=>{
-        let dep = Math.inner[key].key;
-        data.List[Math.key].link.down.push(  dep);
-        data.List[dep     ].link.up.push(Math.key);
-      });
-    // push to data.Keys
-    if(id !== null)
-      data.Keys[String(id)] = Math.key;
-  }
-  if(Inner.length)
-    return Inner;
-  else
-    return Text;
-}
-
-function getRefId(Text) {
-  const Pattern = new RegExp('xlink:href="#(.+?)"',
-                             'gim');
-  let result = null;
-  if((result = Pattern.exec(Text))!== null){
-    return result[1];
-  } else {
-    return null;
-  }
-}
-
 function reverseDependency() {
-  doEach(data.List, (key)=>{
-    let Item = data.List[key];
-    let dep = data.Keys[Item.Obj.out];
-    if(dep !== undefined){
-      data.List[key].link.out.push(dep);
-      data.List[dep].link.in.push(key);
+  doEach(data.List, node => {
+    if (node.params['xlink:href']) {
+      var ref = node.params['xlink:href'].replace('#', '')
+      let dep = data.map.id[ref]
+      if (dep){
+        node.link.out.push(dep)
+        dep.link.in.push(node)
+      }
     }
-  });
+  })
 }
 
-function recursiveListSetRemove(key, remove, moveFrom, R = 0) {
-  if(R++ > 42)
-    throw "Limit recursive exceeded in f.recursiveListSetRemove";
-  if(data.List[key] === undefined)
-    return;
+function burnLine(node, state, fireFrom = 'inner', notAlone = false, R = 0) {
+  if (R++ > 42)
+    throw "Limit recursive exceeded in f.burnLine"
+  if (!node)
+    return
 
-  const tag = data.List[key].tag;
-  data.List[key].remove = remove;
-  let fire = {};
-  if(remove){ // is blacklist > do remove cascate!
-    if(moveFrom !== 'in')   fire.down = data.List[key].link.down;
-    if(moveFrom !== 'down') fire.in   = data.List[key].link.in;
-  } else {    // is whitelist > do unremove cascate!
-    if(moveFrom !== 'down') fire.up   = data.List[key].link.up;
-    if(moveFrom !== 'in')   fire.out  = data.List[key].link.out;
-    if(moveFrom !== 'up' && notAloneTags[tag]) fire.down = data.List[key].link.down;
+  if (inRule('notAlone', node.tag))
+    notAlone = true
+  setState(node, state)
+  let fire = {}
+  if (state == REMOVE){ // is blacklist > do remove cascate!
+    if (fireFrom !== 'out')  fire.in   = node.link.in
+    if (fireFrom !== 'up')   fire.down = node.link.down
+  } else { // is whitelist > do unremove cascate!
+    if (fireFrom !== 'down') fire.up   = node.link.up
+    if (fireFrom !== 'in')   fire.out  = node.link.out
+    if (fireFrom !== 'up' && notAlone) fire.down = node.link.down
   }
-  doEach(fire, (dir)=>{
-    doEach(fire[dir], (key)=>{
-      recursiveListSetRemove(fire[dir][key], remove, dir, R);
-  }); });
+  doEach(fire, (dir, fireTo) => {
+    doEach(dir, node => {
+      burnLine(node, state, fireTo, notAlone, R)
+  }) })
 }
 
-function recursiveObjsSetRemove(Objs, origin = true, remove = false, R = 0) {
-  if(R++ > 42)
-    throw "Limit recursive exceeded in f.recursiveObjsSetRemove";
+function stableTree(Objs, origin = STAY, state = STAY, R = 0) {
+  if (R++ > 42)
+    throw "Limit recursive exceeded in f.stableTree"
 
-  doEach(Objs, (nodo)=>{
-    let key = Objs[nodo].key;
-    if(!origin)
-      remove = true;
-    myOrigin = !data.List[key].remove;
-    if(remove)
-      data.List[key].remove = false;
-    let inner = typeof(Objs[nodo].inner) === 'object' ? Objs[nodo].inner : {};
-    recursiveObjsSetRemove(inner, myOrigin, remove, R);
-  });
+  doEach(Objs, node => {
+    if (origin == REMOVE)
+      state = REMOVE
+    if (state == REMOVE)
+      setState(node, STAY)
+    typeof(node.inner) === 'object'
+      ? stableTree(node.inner, node.state, state, R)
+      : null
+  })
 }
 
-function setRemoveList(List = [], isWhitelist) {
-  doEach(data.List, (key)=>{
-    data.List[key].remove = isWhitelist;
-  });
-  data.v = 0;
-  doEach(List, (i)=>{
-    let key = data.Keys[List[i]];
-    if(key !== undefined)
-      recursiveListSetRemove(key, !isWhitelist);
-  });
-  data.v = 2;
-  recursiveObjsSetRemove(data.Objs);
+function setStateList(List = []) {
+  doEach(data.List, node => {
+    setState(node, stateDict[!isWhitelist])
+  })
+  doEach(data.List, node => {
+    if (inRule('noCut', node.tag))
+      burnLine(node, STAY)
+  })
+  doEach(List, id => {
+    let node = data.map.id[id]
+    if (node)
+      burnLine(node, stateDict[isWhitelist])
+  })
+  stableTree(data.Objs)
+}
+
+function setState(node, state) {
+  if (!inRule('noCut', node.tag))
+    node.state = state
+  else
+    node.state = STAY
+}
+
+function inRule(sub, tag) {
+  return typeof(tag.toLowerCase) === 'function' && rules[sub] !== undefined && rules[sub][tag.toLowerCase()]
 }
 
 function createJoinList() {
-  let preJoin = [];
-  doEach(data.List, (key)=>{
-    let Item = data.List[key];
-    if(Item.remove)
-      preJoin.push({s: Item.Obj.start, e: Item.Obj.end});
-  });
-  data.join = [];
-  let oldE = 0;
-  doEach(preJoin, (i)=>{
-    let Item = {s: oldE, e: preJoin[i].s};
-    if(Item.s > Item.e) {
-      if(debug)
-        console.warn({data, Item});
-      throw 'concat erro s > e';
+  let preJoin = []
+  doEach(data.List, node => {
+    if (node.state === REMOVE)
+      preJoin.push({s: node.string.start, e: node.string.end})
+  })
+  data.join = []
+  let oldE = 0
+  doEach(preJoin, pre => {
+    let Item = {s: oldE, e: pre.s}
+    if (Item.s > Item.e) {
+      if (debug)
+        console.warn({l:data.join.length, Item})
+      throw '(mid) concat erro s > e'
     }
-    data.join.push(Item);
-    oldE = preJoin[i].e;
-  });
-  let Item = {s: oldE, e: data.svg.length};
-  if(Item.s > Item.e) {
-    if(debug)
-      console.warn({data, Item});
-    throw 'concat erro s > e';
+    data.join.push(Item)
+    oldE = pre.e
+  })
+  let Item = {s: oldE, e: data.file.length}
+  if (Item.s > Item.e) {
+    if (debug)
+      console.warn({l:data.join.length, Item})
+    throw '(end) concat erro s > e'
   }
-  data.join.push(Item);
+  data.join.push(Item)
 }
 
 function createNewSVG() {
-  let svg = '';
-  doEach(data.join, (i)=>{
-    let Part = data.join[i];
-    svg += data.svg.slice(Part.s, Part.e);
-  });
-  return svg;
+  let svg = ''
+  doEach(data.join, Part => {
+    svg += data.file.slice(Part.s, Part.e)
+  })
+  return svg
 }
 
 function initialize(svg) {
-  data = { uKey:0, Keys:{}, List:{}, Objs:{}, svg:svg, join:[], resume:{}, ready: false };
-  data.Objs = parseData(svg, null);
-  reverseDependency();
-  data.ready = true;
+  data = Object.assign({ join: [], ready: false }, parse(svg) )
+  reverseDependency()
+  data.ready = true
 }
 
 function extract(list) {
-  setRemoveList(list, isWhitelist);
-  createJoinList();
-  return createNewSVG();
+  setStateList(list)
+  createJoinList()
+  return createNewSVG()
 }
 
 function main(config = {}) {
   // verify input
-  debug       = config.debug === undefined ? false : config.debug;
-  isWhitelist = typeof(config.whitelist) !== 'boolean' ? true : config.whitelist;
-  if(config.list === undefined) { throw 'extractor: param "list" is undefined'; };
-  if(config.svg  === undefined && !data.ready) { throw 'extractor: param "svg" is undefined'; };
-  // initialize
-  const start = +new Date();
-  if(!data.ready || config.svg !== undefined) { initialize(config.svg); }
-  const svge = extract(config.list);
-  // set resume
-  let percent = Math.floor(svge.length /config.svg.length *10000) /100;
-  percent = Math.floor((100 -percent) *100) /100;
-  data.resume.mode = (isWhitelist) ? 'whitelist' : 'blacklist';
-  data.resume.list = config.list.length;
-  data.resume.svg  = config.svg.length;
-  data.resume.svge = svge.length;
-  data.resume.percent = percent;
+  isWhitelist = typeof(config.whitelist) !== 'boolean' ? true : config.whitelist
+  if (config.list === undefined) { throw 'extractor: param "list" is undefined' }
+  if (config.svg  === undefined && !data.ready) { throw 'extractor: param "svg" is undefined' }
 
-  if(debug) { console.log(`\nSVG extracted in ${(+new Date() -start) /1000} seconds\nWith a ${isWhitelist} using ${config.list.length} itens.\nOriginal file have ${config.svg.length/1000} charters and new decrease ${percent}%`); }
-  return svge;
+  // initialize
+  let start, crono
+  if (debug) { start = +new Date() }
+  if (!data.ready || config.svg !== undefined) { initialize(config.svg) }
+  const svge = extract(config.list)
+
+  // set resume
+  let percent = Math.floor(svge.length /config.svg.length *10000) /100
+  percent = Math.floor((100 -percent) *100) /100
+  data.resume = {
+    mode: (isWhitelist) ? 'whitelist' : 'blacklist',
+    list: config.list.length,
+    svg:  config.svg.length,
+    svge: svge.length,
+    percent: percent
+  }
+  if (debug) {
+    crono = (+new Date() -start) /1000
+    console.log(`\nSVG extracted in ${crono} seconds\nWith a ${isWhitelist} using ${config.list.length} itens.\nOriginal file have ${config.svg.length/1000} charters and new decrease ${percent}%`)
+  }
+  return svge
 }
 
 function getResume() {
-  return data.resume;
+  return data.resume
 }
 
-const doEach = (obj, func) => {
-  Object.keys(obj).forEach(func);
+const STAY = "STAY"
+const REMOVE = "REMOVE"
+const stateDict = { true: STAY, STAY: true, false: REMOVE, REMOVE: false }
+const rules = {
+  noCut: {
+    'xml': true, '!doctype': true, 'metadata': true},
+  notAlone: {
+    symbol: true, g: true, metadata: true }
 }
 
-const notAloneTags = { symbol: true, g: true, metadata: true };
 let data = { ready: false }
-let debug = false;
-let isWhitelist;
+let debug = true
+let isWhitelist
+
+const doEach = (obj, func) => Object.keys(obj).forEach(n => func(obj[n], n))
+const Copy = (Obj, base = {}) => Object.assign(base, Obj)
+const { parse } = require('html-parse-regex')
 
 module.exports = {
   init:      initialize, 
