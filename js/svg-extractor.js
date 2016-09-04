@@ -129,7 +129,7 @@ function main(config = {}) {
   // verify input
   isWhitelist = typeof(config.whitelist) !== 'boolean' ? true : config.whitelist
   if (config.directory === undefined && config.list === undefined) { throw 'extractor: need param "list" OR "directory" defined, both are undefined' }
-  if (config.list !== undefined && Array.isArray(config.list)) { throw 'extractor: param "list" must be a array' }
+  if (config.list !== undefined && !Array.isArray(config.list)) { throw 'extractor: param "list" must be a array' }
   if (config.svg  === undefined && !data.ready) { throw 'extractor: param "svg" is undefined' }
 
   // initialize
