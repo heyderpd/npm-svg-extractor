@@ -128,13 +128,26 @@ function extract(list) {
 function main(config = {}) {
   // verify input
   isWhitelist = typeof(config.whitelist) !== 'boolean' ? true : config.whitelist
-  if (config.list === undefined) { throw 'extractor: param "list" is undefined' }
+  if (config.directory === undefined && config.list === undefined) { throw 'extractor: need param "list" OR "directory" defined, both are undefined' }
+  if (config.list !== undefined && Array.isArray(config.list)) { throw 'extractor: param "list" must be a array' }
   if (config.svg  === undefined && !data.ready) { throw 'extractor: param "svg" is undefined' }
 
   // initialize
   let start, crono
   if (debug) { start = +new Date() }
   if (!data.ready || config.svg !== undefined) { initialize(config.svg) }
+
+  // create list from found in directory
+  if (config.directory) {
+    config.list = find({
+      list: getResume("ID"),
+      path: config.directory,
+      getResumeOf: 'NOT_FOUND'
+    });
+    isWhitelist = false;    
+  }
+
+  // extract
   const svge = extract(config.list)
 
   // set resume
@@ -149,13 +162,21 @@ function main(config = {}) {
   }
   if (debug) {
     crono = (+new Date() -start) /1000
-    console.log(`\nSVG extracted in ${crono} seconds\nWith a ${isWhitelist} using ${config.list.length} itens.\nOriginal file have ${config.svg.length/1000} charters and new decrease ${percent}%`)
+    console.log(`\nSVG extracted in ${crono} seconds\nWith a ${data.resume.mode} using ${config.list.length} itens.\nOriginal file have ${config.svg.length/1000} charters and new decrease ${percent}%`)
   }
   return svge
 }
 
-function getResume() {
-  return data.resume
+function getResume(from) {
+  if (from === "ID") {
+    var list = []
+    doEach(data.map.id, (value, id) => {
+      list.push(id)
+    })
+    return list;
+  } else {
+    return data.resume;    
+  }
 }
 
 const STAY = "STAY"
@@ -174,7 +195,9 @@ let isWhitelist
 
 const doEach = (obj, func) => Object.keys(obj).forEach(n => func(obj[n], n))
 const Copy = (Obj, base = {}) => Object.assign(base, Obj)
+
 const { parse } = require('html-parse-regex')
+const { find } = require('regex-finder')
 
 module.exports = {
   init:      initialize, 
