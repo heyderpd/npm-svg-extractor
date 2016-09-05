@@ -1,4 +1,10 @@
 
+/*!
+ * svg-extractor
+ * Copyright (c) 2016 heyderpd <heyderpd@gmail.com>
+ * ISC Licensed
+ */
+
 function reverseDependency() {
   doEach(data.List, node => {
     if (node.params['xlink:href']) {
