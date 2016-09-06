@@ -2,23 +2,19 @@
 Create new svg file from another with a whitelist or blacklist of required id.
 Use in build to create small svg files.
 
-##New feature
+## New feature
 If you need create static svg, from a need of given directory.
 Now you can pass the directory, and the module will find svg is called in it.
 Finally will create a svg file. Have only itens is used in this directory.
 
-##First Steps
-* install node 6
-* touch .babelrc
-and write in:
-```javascript
-{
-  "presets": ["es2015"]
-}
-```
-* npm install svg-extractor
+## First Steps NO MORE!
+Now is is in es2015, don't need first steps!
+Thanks for:
+[npm~lucasmreis](https://www.npmjs.com/~lucasmreis)
 
-##To create a new file from another, using call's found in a directory
+npm install svg-extractor
+
+## To create a new file from another, using call's found in a directory
 Example:
 ```javascript
 import fs from 'fs';
@@ -35,7 +31,7 @@ const svge = extractor({
 fs.writeFileSync(`small-file.svg`, svge);
 ```
 
-##To only return the itens in list
+## To only return the itens in list
 Example:
 ```javascript
 import { extractor } from 'svg-extractor';
@@ -48,7 +44,7 @@ const svge = extractor({
 svge // new svg file extracted
 ```
 
-##To not return the itens in list
+## To not return the itens in list
 Example:
 ```javascript
 import { extractor } from 'svg-extractor';
@@ -62,7 +58,7 @@ const svge = extractor({
 svge // new svg file extracted
 ```
 
-##To create a new file from another
+## To create a new file from another
 Example:
 ```javascript
 import fs from 'fs';
