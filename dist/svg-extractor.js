@@ -69,12 +69,12 @@ function setStateList() {
   doEach(data.List, function (node) {
     setState(node, stateDict[!isWhitelist]);
   });
-  doEach(data.List, function (node) {
-    if (inRule('noCut', node.tag)) burnLine(node, STAY);
-  });
   doEach(List, function (id) {
     var node = data.map.id[id];
     if (node) burnLine(node, stateDict[isWhitelist]);
+  });
+  doEach(data.List, function (node) {
+    if (inRule('noCut', node.tag)) burnLine(node, STAY);
   });
   stableTree(data.Objs);
 }
@@ -128,7 +128,13 @@ function initialize(svg) {
 function extract(list) {
   setStateList(list);
   createJoinList();
-  return createNewSVG();
+  var svge = createNewSVG();
+  return clearBlankLines(svge);
+}
+
+function clearBlankLines(svg) {
+  var no_lines = svg.replace(/(?:(?:\n[\t ]*)+)/gim, "\n");
+  return no_lines.replace(/[\t ]{2,}/gim, " ");
 }
 
 function main() {

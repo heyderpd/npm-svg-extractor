@@ -60,15 +60,15 @@ function stableTree(Objs, origin = STAY, state = STAY, R = 0) {
 function setStateList(List = []) {
   doEach(data.List, node => {
     setState(node, stateDict[!isWhitelist])
-  })
-  doEach(data.List, node => {
-    if (inRule('noCut', node.tag))
-      burnLine(node, STAY)
-  })
+  })  
   doEach(List, id => {
     let node = data.map.id[id]
     if (node)
       burnLine(node, stateDict[isWhitelist])
+  })
+  doEach(data.List, node => {
+    if (inRule('noCut', node.tag))
+      burnLine(node, STAY)
   })
   stableTree(data.Objs)
 }
@@ -128,7 +128,13 @@ function initialize(svg) {
 function extract(list) {
   setStateList(list)
   createJoinList()
-  return createNewSVG()
+  const svge = createNewSVG()
+  return clearBlankLines(svge)
+}
+
+function clearBlankLines(svg) {
+  const no_lines = svg.replace(/(?:(?:\n[\t ]*)+)/gim, "\n")
+  return no_lines.replace(/[\t ]{2,}/gim, " ")
 }
 
 function main(config = {}) {
