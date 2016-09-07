@@ -131,6 +131,30 @@ function extract(list) {
   return createNewSVG()
 }
 
+function processAnymatch(anyList = [], directoryList) { //directoryFind
+  const mapedId = getResume("ID")
+  let mathList = []
+  doEach(mapedId, (value, id) => {
+    let match = anymatch(anyList, value)
+    if( (isWhitelist && !match) || (!isWhitelist && match) ){
+      mathList[id] = value
+      delete mapedId[id]
+    }
+  })
+
+  if (!directoryList) {
+    return mathList
+  } else {
+    const resumeOf = isWhitelist ? 'FOUND' : 'NOT_FOUND'
+    const dirList = find({
+                          list: mapedId,
+                          path: config.directory,
+                          getResumeOf: resumeOf
+                         })
+    return mathList.concat(dirList)
+  }
+}
+
 function main(config = {}) {
   // verify input
   isWhitelist = typeof(config.whitelist) !== 'boolean' ? true : config.whitelist
@@ -144,17 +168,11 @@ function main(config = {}) {
   if (!data.ready || config.svg !== undefined) { initialize(config.svg) }
 
   // create list from found in directory
-  if (config.directory) {
-    config.list = find({
-      list: getResume("ID"),
-      path: config.directory,
-      getResumeOf: 'NOT_FOUND'
-    });
-    isWhitelist = false;    
-  }
+  const extractList = processAnymatch(config.list,
+                                      config.directory)
 
   // extract
-  const svge = extract(config.list)
+  const svge = extract(extractList)
 
   // set resume
   let percent = Math.floor(svge.length /config.svg.length *10000) /100
@@ -202,8 +220,9 @@ let isWhitelist
 const doEach = (obj, func) => Object.keys(obj).forEach(n => func(obj[n], n))
 const Copy = (Obj, base = {}) => Object.assign(base, Obj)
 
+const  anymatch = require('anymatch');
 const { parse } = require('html-parse-regex')
-const { find } = require('regex-finder')
+const { find }  = require('regex-finder')
 
 module.exports = {
   init:      initialize, 

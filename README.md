@@ -8,7 +8,7 @@ Now you can pass the directory, and the module will find svg is called in it.
 Finally will create a svg file. Have only itens is used in this directory.
 
 ## First Steps NO MORE!
-Now is is in es2015, don't need first steps!
+Now use es2015, don't need first steps!
 Thanks for:
 [npm~lucasmreis](https://www.npmjs.com/~lucasmreis)
 
