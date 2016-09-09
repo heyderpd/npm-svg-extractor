@@ -131,7 +131,7 @@ function extract(list) {
   return createNewSVG()
 }
 
-function processAnymatch(anyList = [], directoryList) {
+function processAnymatch(anyList = [], directoryList = undefined, extension = undefined) {
   let mapedId = getResume("ID")
   let mathList = [], notMathList = []
   doEach(mapedId, (value, id) => {
@@ -143,13 +143,14 @@ function processAnymatch(anyList = [], directoryList) {
     }
   })
 
-  if (!directoryList) {
+  if (directoryList === undefined) {
     return mathList
   } else {
     const resumeOf = isWhitelist ? 'FOUND' : 'NOT_FOUND'
     const dirList = find({
                           list: notMathList,
-                          path: config.directory,
+                          extension: extension,
+                          path: directoryList,
                           getResumeOf: resumeOf
                          })
     return mathList.concat(dirList)
@@ -170,7 +171,8 @@ function main(config = {}) {
 
   // create list from found in directory
   const extractList = processAnymatch(config.list,
-                                      config.directory)
+                                      config.directory,
+                                      config.extension)
 
   // extract
   const svge = extract(extractList)

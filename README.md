@@ -9,6 +9,7 @@ Use in build to create small svg files.
 * Now whitelist and blacklist acepct anymatch!
 * You can use list and directory at the same time.
 * Can pass multiple directory using array.
+* Can pass extension of files you need find call of id
 * If you need create static svg, from a need of given directory.
 Now you can pass the directory, and the module will find svg is called in it.
 Finally will create a svg file. Have only itens is used in this directory.
@@ -33,6 +34,7 @@ const svge = extractor({
   svg: svg,
   list : list,
   directory : directory,
+  extension: ['html', 'js', 'json'], // (optional)
   whitelist : true
 });
 ```
