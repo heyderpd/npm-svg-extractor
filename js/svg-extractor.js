@@ -131,14 +131,15 @@ function extract(list) {
   return createNewSVG()
 }
 
-function processAnymatch(anyList = [], directoryList) { //directoryFind
-  const mapedId = getResume("ID")
-  let mathList = []
+function processAnymatch(anyList = [], directoryList) {
+  let mapedId = getResume("ID")
+  let mathList = [], notMathList = []
   doEach(mapedId, (value, id) => {
     let match = anymatch(anyList, value)
     if( (isWhitelist && !match) || (!isWhitelist && match) ){
-      mathList[id] = value
-      delete mapedId[id]
+      mathList.push(value)
+    } else {
+      notMathList.push(value)
     }
   })
 
@@ -147,7 +148,7 @@ function processAnymatch(anyList = [], directoryList) { //directoryFind
   } else {
     const resumeOf = isWhitelist ? 'FOUND' : 'NOT_FOUND'
     const dirList = find({
-                          list: mapedId,
+                          list: notMathList,
                           path: config.directory,
                           getResumeOf: resumeOf
                          })

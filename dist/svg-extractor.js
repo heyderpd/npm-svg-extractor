@@ -131,6 +131,35 @@ function extract(list) {
   return createNewSVG();
 }
 
+function processAnymatch() {
+  var anyList = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
+  var directoryList = arguments[1];
+
+  var mapedId = getResume("ID");
+  var mathList = [],
+      notMathList = [];
+  doEach(mapedId, function (value, id) {
+    var match = anymatch(anyList, value);
+    if (isWhitelist && !match || !isWhitelist && match) {
+      mathList.push(value);
+    } else {
+      notMathList.push(value);
+    }
+  });
+
+  if (!directoryList) {
+    return mathList;
+  } else {
+    var resumeOf = isWhitelist ? 'FOUND' : 'NOT_FOUND';
+    var dirList = find({
+      list: notMathList,
+      path: config.directory,
+      getResumeOf: resumeOf
+    });
+    return mathList.concat(dirList);
+  }
+}
+
 function main() {
   var config = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
@@ -157,17 +186,10 @@ function main() {
   }
 
   // create list from found in directory
-  if (config.directory) {
-    config.list = find({
-      list: getResume("ID"),
-      path: config.directory,
-      getResumeOf: 'NOT_FOUND'
-    });
-    isWhitelist = false;
-  }
+  var extractList = processAnymatch(config.list, config.directory);
 
   // extract
-  var svge = extract(config.list);
+  var svge = extract(extractList);
 
   // set resume
   var percent = Math.floor(svge.length / config.svg.length * 10000) / 100;
@@ -221,6 +243,8 @@ var Copy = function Copy(Obj) {
   var base = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
   return Object.assign(base, Obj);
 };
+
+var anymatch = require('anymatch');
 
 var _require = require('html-parse-regex');
 
