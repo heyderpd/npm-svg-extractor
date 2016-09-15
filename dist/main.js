@@ -128,7 +128,7 @@ function initialize(svg) {
 function extract(list) {
   setStateList(list);
   createJoinList();
-  return createNewSVG();
+  return createNewSVG().replace(/[ \t]+/gim, '').replace(/((?:[ \t]*\n)+)/gim, '\n');
 }
 
 function processAnymatch() {
@@ -139,12 +139,11 @@ function processAnymatch() {
   var mapedId = getResume("ID");
   var mathList = [],
       notMathList = [];
-  doEach(mapedId, function (value, id) {
-    var match = anymatch(anyList, value);
-    if (isWhitelist && !match || !isWhitelist && match) {
-      mathList.push(value);
+  doEach(mapedId, function (id) {
+    if (anymatch(anyList, id)) {
+      mathList.push(id);
     } else {
-      notMathList.push(value);
+      notMathList.push(id);
     }
   });
 
@@ -213,7 +212,7 @@ function main() {
 function getResume(from) {
   if (from === "ID") {
     var list = [];
-    doEach(data.map.id, function (value, id) {
+    doEach(data.map.id, function (node, id) {
       list.push(id);
     });
     return list;

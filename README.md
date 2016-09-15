@@ -2,82 +2,71 @@
 Create new svg file from another with a whitelist or blacklist of required id.
 Use in build to create small svg files.
 
-[![NPM](https://nodei.co/npm/svg-extractor.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/svg-extractor/)
-[![NPM](https://nodei.co/npm-dl/svg-extractor.png?height=3&months=1)](https://nodei.co/npm-dl/svg-extractor/)
+## All process have a avg of 22 mileseconds!!!
+```javascript
+npm install svg-extractor
+```
 
-## New feature (bug fixed!!!)
+## I will help if you have any difficulty =)
+Contact me by [github:heyderpd](https://github.com/heyderpd). I'll be glad to help you.
+
+[![NPM](https://nodei.co/npm/svg-extractor.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/svg-extractor/)
+[![NPM](https://nodei.co/npm-dl/svg-extractor.png?height=3&months=2)](https://nodei.co/npm-dl/svg-extractor/)
+
+## New feature (other bug's fixed)
 * Now whitelist and blacklist acepct anymatch!
-* You can use list and directory at the same time.
+* You can use list and directory at the same time or only a directory!
 * Can pass multiple directory using array.
 * Can pass extension of files you need find call of id
 * If you need create static svg, from a need of given directory.
 Now you can pass the directory, and the module will find svg is called in it.
 Finally will create a svg file. Have only itens is used in this directory.
 
-## First Steps NO MORE!
-Now use es2015, don't need first steps!
-Thanks for:
-[npm~lucasmreis](https://www.npmjs.com/~lucasmreis)
-
-npm install svg-extractor
+## Thanks for [npm~lucasmreis](https://www.npmjs.com/~lucasmreis)
 
 ## To create a new file from another, using call's found in a directory and whitelist
-
-In this case the program will map all id in svg file, filter this using the whitelist you define. And Finally will find all call's in directory's to create the rest of list. In blacklist mode occurs in reverse, only on the absence of calls from id's. Creating the desired list at the end.
+If is whitelist program will use list (of anymatch)  to select id's. And will search call's in directories, using the rest of id's found in svg. Finally create a big whitelist to extract!
+Else is a blacklist will use list (of anymatch) to remove id's. And will search id's is not called in directories, using the of rest id's found in svg. Finally create a big blacklist to extract!
+You don't need pass a list if pass a directory.
+The var list accept any values of [anymath](https://www.npmjs.com/package/anymatch) module
 Example:
 ```javascript
-const svg = fs.readFileSync(`big-file.svg`, 'utf8');
-const directory = [ './test/', './abc/def' ];
-const list = [ 'abc', 'a*', '\d+' ]
+var svg = fs.readFileSync(`big-file.svg`, 'utf8');
+var directory = [ './test/', './abc/def' ];
+var list = [ 'abc', 'a*', '\\d+', functionA ]
 
-const svge = extractor({
+var svge = extractor({
   svg: svg,
-  list : list,
-  directory : directory,
+  list: list,
+  directory: directory,
   extension: ['html', 'js', 'json'], // (optional)
-  whitelist : true
+  whitelist: true // (optional default true)
 });
 ```
 
 ## To only return the itens in list
 Example:
 ```javascript
-import { extractor } from 'svg-extractor';
-
-const svge = extractor({
+var svge = extractor({
   svg: ...ram of svg file...,
-  list: ['first', 'second', 'a*', '\d+'],
+  list: ['first', 'second', 'a*', '\\d+', functionA],
+  whitelist: true // (optional default true)
 });
-
-svge // new svg file extracted
 ```
 
 ## To not return the itens in list
 Example:
 ```javascript
-import { extractor } from 'svg-extractor';
-
-const svge = extractor({
-  svg: ...ram of svg file...,
-  list: ['first', 'second', 'a*', '\d+'],
-  whitelist: false,
+var svge = extractor({
+  ... same as the previous example ...
+  whitelist: false
 });
-
-svge // new svg file extracted
 ```
 
 ## To create a new file from another
 Example:
 ```javascript
-import fs from 'fs';
-import { extractor } from 'svg-extractor';
-
-const svg = fs.readFileSync(`big-file.svg`, 'utf8');
-
-const svge = extractor({
-  svg: svg,
-  list: ['first', 'second', 'a*', '\d+'],
-});
-
+var svg = fs.readFileSync(`big-file.svg`, 'utf8');
+var svge = extractor(...);
 fs.writeFileSync(`small-file.svg`, svge);
 ```

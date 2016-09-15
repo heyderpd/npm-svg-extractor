@@ -129,17 +129,18 @@ function extract(list) {
   setStateList(list)
   createJoinList()
   return createNewSVG()
+    .replace(/[ \t]+/gim, '')
+    .replace(/((?:[ \t]*\n)+)/gim, '\n')
 }
 
 function processAnymatch(anyList = [], directoryList = undefined, extension = undefined) {
   let mapedId = getResume("ID")
   let mathList = [], notMathList = []
-  doEach(mapedId, (value, id) => {
-    let match = anymatch(anyList, value)
-    if( (isWhitelist && !match) || (!isWhitelist && match) ){
-      mathList.push(value)
+  doEach(mapedId, id => {
+    if( anymatch(anyList, id) ){
+      mathList.push(id)
     } else {
-      notMathList.push(value)
+      notMathList.push(id)
     }
   })
 
@@ -197,7 +198,7 @@ function main(config = {}) {
 function getResume(from) {
   if (from === "ID") {
     var list = []
-    doEach(data.map.id, (value, id) => {
+    doEach(data.map.id, (node, id) => {
       list.push(id)
     })
     return list;

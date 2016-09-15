@@ -1,1 +1,1 @@
-module.exports = require('./dist/svg-extractor');
+module.exports = require('./dist/main');
