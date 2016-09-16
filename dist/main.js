@@ -155,7 +155,8 @@ function processAnymatch() {
       list: notMathList,
       extension: extension,
       path: directoryList,
-      getResumeOf: resumeOf
+      getResumeOf: resumeOf,
+      pattern: '[^\\w-](__LIST__)[^\\w-]'
     });
     return mathList.concat(dirList);
   }
