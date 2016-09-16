@@ -1,8 +1,8 @@
 {
   "name": "svg-extractor",
-  "version": "0.5.4",
+  "version": "0.5.7",
   "description": "SVG extractor module",
-  "main": "extractor.js",
+  "main": "index.js",
   "scripts": {
     "transpile": "babel src/ -d dist/"
   },

@@ -31,11 +31,13 @@ You don't need pass a list if pass a directory.
 The var list accept any values of [anymath](https://www.npmjs.com/package/anymatch) module
 Example:
 ```javascript
-var svg = fs.readFileSync(`big-file.svg`, 'utf8');
-var directory = [ './test/', './abc/def' ];
-var list = [ 'abc', 'a*', '\\d+', functionA ]
+const { extractor } = require('svg-extractor')
 
-var svge = extractor({
+let svg = fs.readFileSync(`big-file.svg`, 'utf8');
+let directory = [ './test/', './abc/def' ];
+let list = [ 'abc', 'a*', '\\d+', functionA ]
+
+let svge = extractor({
   svg: svg,
   list: list,
   directory: directory,
@@ -47,7 +49,7 @@ var svge = extractor({
 ## To only return the itens in list
 Example:
 ```javascript
-var svge = extractor({
+let svge = extractor({
   svg: ...ram of svg file...,
   list: ['first', 'second', 'a*', '\\d+', functionA],
   whitelist: true // (optional default true)
@@ -57,7 +59,7 @@ var svge = extractor({
 ## To not return the itens in list
 Example:
 ```javascript
-var svge = extractor({
+let svge = extractor({
   ... same as the previous example ...
   whitelist: false
 });
@@ -66,7 +68,7 @@ var svge = extractor({
 ## To create a new file from another
 Example:
 ```javascript
-var svg = fs.readFileSync(`big-file.svg`, 'utf8');
-var svge = extractor(...);
+let svg = fs.readFileSync(`big-file.svg`, 'utf8');
+let svge = extractor(...);
 fs.writeFileSync(`small-file.svg`, svge);
 ```
