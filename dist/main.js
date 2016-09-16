@@ -69,12 +69,12 @@ function setStateList() {
   doEach(data.List, function (node) {
     setState(node, stateDict[!isWhitelist]);
   });
-  doEach(data.List, function (node) {
-    if (inRule('noCut', node.tag)) burnLine(node, STAY);
-  });
   doEach(List, function (id) {
     var node = data.map.id[id];
     if (node) burnLine(node, stateDict[isWhitelist]);
+  });
+  doEach(data.List, function (node) {
+    if (inRule('noCut', node.tag)) burnLine(node, STAY);
   });
   stableTree(data.Objs);
 }

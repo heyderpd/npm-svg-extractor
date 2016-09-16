@@ -60,15 +60,15 @@ function stableTree(Objs, origin = STAY, state = STAY, R = 0) {
 function setStateList(List = []) {
   doEach(data.List, node => {
     setState(node, stateDict[!isWhitelist])
-  })
-  doEach(data.List, node => {
-    if (inRule('noCut', node.tag))
-      burnLine(node, STAY)
-  })
+  })  
   doEach(List, id => {
     let node = data.map.id[id]
     if (node)
       burnLine(node, stateDict[isWhitelist])
+  })
+  doEach(data.List, node => {
+    if (inRule('noCut', node.tag))
+      burnLine(node, STAY)
   })
   stableTree(data.Objs)
 }
