@@ -6,7 +6,7 @@
  */
 
 function reverseDependency() {
-  doEach(data.List, node => {
+  eachVal(data.List, node => {
     if (node.params['xlink:href']) {
       var ref = node.params['xlink:href'].replace('#', '')
       let dep = data.map.id[ref]
@@ -36,8 +36,8 @@ function burnLine(node, state, fireFrom = 'inner', notAlone = false, R = 0) {
     if (fireFrom !== 'in')   fire.out  = node.link.out
     if (fireFrom !== 'up' && notAlone) fire.down = node.link.down
   }
-  doEach(fire, (dir, fireTo) => {
-    doEach(dir, node => {
+  each(fire, (fireTo, dir) => {
+    eachVal(dir, node => {
       burnLine(node, state, fireTo, notAlone, R)
   }) })
 }
@@ -46,7 +46,7 @@ function stableTree(Objs, origin = STAY, state = STAY, R = 0) {
   if (R++ > 42)
     throw "Limit recursive exceeded in f.stableTree"
 
-  doEach(Objs, node => {
+  eachVal(Objs, node => {
     if (origin == REMOVE)
       state = REMOVE
     if (state == REMOVE)
@@ -58,15 +58,15 @@ function stableTree(Objs, origin = STAY, state = STAY, R = 0) {
 }
 
 function setStateList(List = []) {
-  doEach(data.List, node => {
+  eachVal(data.List, node => {
     setState(node, stateDict[!isWhitelist])
   })  
-  doEach(List, id => {
+  eachVal(List, id => {
     let node = data.map.id[id]
     if (node)
       burnLine(node, stateDict[isWhitelist])
   })
-  doEach(data.List, node => {
+  eachVal(data.List, node => {
     if (inRule('noCut', node.tag))
       burnLine(node, STAY)
   })
@@ -86,13 +86,13 @@ function inRule(sub, tag) {
 
 function createJoinList() {
   let preJoin = []
-  doEach(data.List, node => {
+  eachVal(data.List, node => {
     if (node.state === REMOVE)
       preJoin.push({s: node.string.start, e: node.string.end})
   })
   data.join = []
   let oldE = 0
-  doEach(preJoin, pre => {
+  eachVal(preJoin, pre => {
     let Item = {s: oldE, e: pre.s}
     if (Item.s > Item.e) {
       if (debug)
@@ -113,7 +113,7 @@ function createJoinList() {
 
 function createNewSVG() {
   let svg = ''
-  doEach(data.join, Part => {
+  eachVal(data.join, Part => {
     svg += data.file.slice(Part.s, Part.e)
   })
   return svg
@@ -136,7 +136,7 @@ function extract(list) {
 function processAnymatch(anyList = [], directoryList = undefined, extension = undefined) {
   let mapedId = getResume("ID")
   let mathList = [], notMathList = []
-  doEach(mapedId, id => {
+  eachVal(mapedId, id => {
     if( anymatch(anyList, id) ){
       mathList.push(id)
     } else {
@@ -191,7 +191,9 @@ function main(config = {}) {
   }
   if (debug) {
     crono = (+new Date() -start) /1000
-    console.log(`\nSVG extracted in ${crono} seconds\nWith a ${data.resume.mode} using ${config.list.length} itens.\nOriginal file have ${config.svg.length/1000} charters and new decrease ${percent}%`)
+    let svgL = (config.svg.length /1000 ).toFixed(3)
+    let svgeL = ( svge.length /1000 ).toFixed(3)
+    console.log(`\nSVG extracted in ${crono} seconds\nWith a ${data.resume.mode} using ${config.list.length} itens.\nOriginal file have ${svgL} characters and new have ${svgeL} (decrease ${percent}%)`)
   }
   return svge
 }
@@ -199,7 +201,7 @@ function main(config = {}) {
 function getResume(from) {
   if (from === "ID") {
     var list = []
-    doEach(data.map.id, (node, id) => {
+    each(data.map.id, id => {
       list.push(id)
     })
     return list;
@@ -222,9 +224,7 @@ let data = { ready: false }
 let debug = true
 let isWhitelist
 
-const doEach = (obj, func) => Object.keys(obj).forEach(n => func(obj[n], n))
-const Copy = (Obj, base = {}) => Object.assign(base, Obj)
-
+const { each, eachVal } = require('pytils')
 const  anymatch = require('anymatch');
 const { parse } = require('html-parse-regex')
 const { find }  = require('regex-finder')

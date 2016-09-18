@@ -9,7 +9,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
  */
 
 function reverseDependency() {
-  doEach(data.List, function (node) {
+  eachVal(data.List, function (node) {
     if (node.params['xlink:href']) {
       var ref = node.params['xlink:href'].replace('#', '');
       var dep = data.map.id[ref];
@@ -42,8 +42,8 @@ function burnLine(node, state) {
     if (fireFrom !== 'in') fire.out = node.link.out;
     if (fireFrom !== 'up' && notAlone) fire.down = node.link.down;
   }
-  doEach(fire, function (dir, fireTo) {
-    doEach(dir, function (node) {
+  each(fire, function (fireTo, dir) {
+    eachVal(dir, function (node) {
       burnLine(node, state, fireTo, notAlone, R);
     });
   });
@@ -56,7 +56,7 @@ function stableTree(Objs) {
 
   if (R++ > 42) throw "Limit recursive exceeded in f.stableTree";
 
-  doEach(Objs, function (node) {
+  eachVal(Objs, function (node) {
     if (origin == REMOVE) state = REMOVE;
     if (state == REMOVE) setState(node, STAY);
     _typeof(node.inner) === 'object' ? stableTree(node.inner, node.state, state, R) : null;
@@ -66,14 +66,14 @@ function stableTree(Objs) {
 function setStateList() {
   var List = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
 
-  doEach(data.List, function (node) {
+  eachVal(data.List, function (node) {
     setState(node, stateDict[!isWhitelist]);
   });
-  doEach(List, function (id) {
+  eachVal(List, function (id) {
     var node = data.map.id[id];
     if (node) burnLine(node, stateDict[isWhitelist]);
   });
-  doEach(data.List, function (node) {
+  eachVal(data.List, function (node) {
     if (inRule('noCut', node.tag)) burnLine(node, STAY);
   });
   stableTree(data.Objs);
@@ -89,12 +89,12 @@ function inRule(sub, tag) {
 
 function createJoinList() {
   var preJoin = [];
-  doEach(data.List, function (node) {
+  eachVal(data.List, function (node) {
     if (node.state === REMOVE) preJoin.push({ s: node.string.start, e: node.string.end });
   });
   data.join = [];
   var oldE = 0;
-  doEach(preJoin, function (pre) {
+  eachVal(preJoin, function (pre) {
     var Item = { s: oldE, e: pre.s };
     if (Item.s > Item.e) {
       if (debug) console.warn({ l: data.join.length, Item: Item });
@@ -113,7 +113,7 @@ function createJoinList() {
 
 function createNewSVG() {
   var svg = '';
-  doEach(data.join, function (Part) {
+  eachVal(data.join, function (Part) {
     svg += data.file.slice(Part.s, Part.e);
   });
   return svg;
@@ -139,7 +139,7 @@ function processAnymatch() {
   var mapedId = getResume("ID");
   var mathList = [],
       notMathList = [];
-  doEach(mapedId, function (id) {
+  eachVal(mapedId, function (id) {
     if (anymatch(anyList, id)) {
       mathList.push(id);
     } else {
@@ -205,7 +205,9 @@ function main() {
   };
   if (debug) {
     crono = (+new Date() - start) / 1000;
-    console.log('\nSVG extracted in ' + crono + ' seconds\nWith a ' + data.resume.mode + ' using ' + config.list.length + ' itens.\nOriginal file have ' + config.svg.length / 1000 + ' charters and new decrease ' + percent + '%');
+    var svgL = (config.svg.length / 1000).toFixed(3);
+    var svgeL = (svge.length / 1000).toFixed(3);
+    console.log('\nSVG extracted in ' + crono + ' seconds\nWith a ' + data.resume.mode + ' using ' + config.list.length + ' itens.\nOriginal file have ' + svgL + ' characters and new have ' + svgeL + ' (decrease ' + percent + '%)');
   }
   return svge;
 }
@@ -213,7 +215,7 @@ function main() {
 function getResume(from) {
   if (from === "ID") {
     var list = [];
-    doEach(data.map.id, function (node, id) {
+    each(data.map.id, function (id) {
       list.push(id);
     });
     return list;
@@ -236,25 +238,20 @@ var data = { ready: false };
 var debug = true;
 var isWhitelist = void 0;
 
-var doEach = function doEach(obj, func) {
-  return Object.keys(obj).forEach(function (n) {
-    return func(obj[n], n);
-  });
-};
-var Copy = function Copy(Obj) {
-  var base = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-  return Object.assign(base, Obj);
-};
+var _require = require('pytils');
+
+var each = _require.each;
+var eachVal = _require.eachVal;
 
 var anymatch = require('anymatch');
 
-var _require = require('html-parse-regex');
+var _require2 = require('html-parse-regex');
 
-var parse = _require.parse;
+var parse = _require2.parse;
 
-var _require2 = require('regex-finder');
+var _require3 = require('regex-finder');
 
-var find = _require2.find;
+var find = _require3.find;
 
 
 module.exports = {
