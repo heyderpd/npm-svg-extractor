@@ -128,7 +128,7 @@ function initialize(svg) {
 function extract(list) {
   setStateList(list);
   createJoinList();
-  return createNewSVG().replace(/[ \t]+/gim, '').replace(/((?:[ \t]*\n)+)/gim, '\n');
+  return createNewSVG().replace(/[ \t]{2,}/gim, ' ').replace(/(\n(?:[ \t]*\n)+)/gim, '\n');
 }
 
 function processAnymatch() {
