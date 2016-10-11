@@ -1,6 +1,6 @@
 'use strict';
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 /*!
  * svg-extractor
@@ -22,9 +22,9 @@ function reverseDependency() {
 }
 
 function burnLine(node, state) {
-  var fireFrom = arguments.length <= 2 || arguments[2] === undefined ? 'inner' : arguments[2];
-  var notAlone = arguments.length <= 3 || arguments[3] === undefined ? false : arguments[3];
-  var R = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
+  var fireFrom = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'inner';
+  var notAlone = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+  var R = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
 
   if (R++ > 42) throw "Limit recursive exceeded in f.burnLine";
   if (!node) return;
@@ -50,9 +50,9 @@ function burnLine(node, state) {
 }
 
 function stableTree(Objs) {
-  var origin = arguments.length <= 1 || arguments[1] === undefined ? STAY : arguments[1];
-  var state = arguments.length <= 2 || arguments[2] === undefined ? STAY : arguments[2];
-  var R = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
+  var origin = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : STAY;
+  var state = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : STAY;
+  var R = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
 
   if (R++ > 42) throw "Limit recursive exceeded in f.stableTree";
 
@@ -64,7 +64,7 @@ function stableTree(Objs) {
 }
 
 function setStateList() {
-  var List = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
+  var List = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
   eachVal(data.List, function (node) {
     setState(node, stateDict[!isWhitelist]);
@@ -132,9 +132,9 @@ function extract(list) {
 }
 
 function processAnymatch() {
-  var anyList = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
-  var directoryList = arguments.length <= 1 || arguments[1] === undefined ? undefined : arguments[1];
-  var extension = arguments.length <= 2 || arguments[2] === undefined ? undefined : arguments[2];
+  var anyList = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  var directoryList = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
+  var extension = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
 
   var mapedId = getResume("ID");
   var mathList = [],
@@ -163,7 +163,7 @@ function processAnymatch() {
 }
 
 function main() {
-  var config = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+  var config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
   // verify input
   isWhitelist = typeof config.whitelist !== 'boolean' ? true : config.whitelist;

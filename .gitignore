@@ -2,3 +2,8 @@
 npm-debug*
 
 node_modules/*
+npm/node_modules/*
+
+test/*
+
+/package.json
