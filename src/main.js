@@ -144,12 +144,12 @@ function extract(list) {
   setStateList(list)
   createJoinList()
   return createNewSVG()
-    .replace(/[ \t]{2,}/gim, ' ')
-    .replace(/(\n(?:[ \t]*\n)+)/gim, '\n')
+    .replace(/[\r\n]/gm, '\n')
+    .replace(/\n[ \t\n]+/gm, '\n')
 }
 
 function processAnymatch(anyList = [], directoryList = undefined, extension = undefined) {
-  let mapedId = getResume("ID")
+  let mapedId = getResume('ID')
   let mathList = [], notMathList = []
   map(
     id => {
@@ -216,19 +216,15 @@ function main(config = {}) {
 }
 
 function getResume(from) {
-  if (from === "ID") {
-    var list = []
-    map(
-      id => list.push(id),
-      data.map.id)
-    return list;
+  if (from === 'ID') {
+    return keys(data.map.id);
   } else {
     return data.resume;
   }
 }
 
-const STAY = "STAY"
-const REMOVE = "REMOVE"
+const STAY = 'STAY'
+const REMOVE = 'REMOVE'
 const stateDict = { true: STAY, STAY: true, false: REMOVE, REMOVE: false }
 const rules = {
   noCut: {
@@ -241,7 +237,7 @@ let data = { ready: false }
 let debug = true
 let isWhitelist
 
-const { map } = require('pytils')
+const { map, keys } = require('pytils')
 const  anymatch = require('anymatch');
 const { parse } = require('html-parse-regex')
 const { find }  = require('regex-finder')

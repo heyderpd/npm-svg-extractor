@@ -134,7 +134,7 @@ function initialize(svg) {
 function extract(list) {
   setStateList(list);
   createJoinList();
-  return createNewSVG().replace(/[ \t]{2,}/gim, ' ').replace(/(\n(?:[ \t]*\n)+)/gim, '\n');
+  return createNewSVG().replace(/[\r\n]/gm, '\n').replace(/\n[ \t\n]+/gm, '\n');
 }
 
 function processAnymatch() {
@@ -142,7 +142,7 @@ function processAnymatch() {
   var directoryList = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
   var extension = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
 
-  var mapedId = getResume("ID");
+  var mapedId = getResume('ID');
   var mathList = [],
       notMathList = [];
   map(function (id) {
@@ -219,19 +219,15 @@ function main() {
 }
 
 function getResume(from) {
-  if (from === "ID") {
-    var list = [];
-    map(function (id) {
-      return list.push(id);
-    }, data.map.id);
-    return list;
+  if (from === 'ID') {
+    return keys(data.map.id);
   } else {
     return data.resume;
   }
 }
 
-var STAY = "STAY";
-var REMOVE = "REMOVE";
+var STAY = 'STAY';
+var REMOVE = 'REMOVE';
 var stateDict = { true: STAY, STAY: true, false: REMOVE, REMOVE: false };
 var rules = {
   noCut: {
@@ -245,7 +241,8 @@ var debug = true;
 var isWhitelist = void 0;
 
 var _require = require('pytils'),
-    map = _require.map;
+    map = _require.map,
+    keys = _require.keys;
 
 var anymatch = require('anymatch');
 

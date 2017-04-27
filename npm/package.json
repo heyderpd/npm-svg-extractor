@@ -1,7 +1,7 @@
 {
   "license": "MIT",
   "name": "svg-extractor",
-  "version": "0.7.0",
+  "version": "0.7.2",
   "description": "SVG extractor module",
   "main": "index.js",
   "scripts": {},
@@ -24,8 +24,8 @@
   },
   "dependencies": {
     "anymatch": "^1.3.0",
-    "html-parse-regex": "0.6.2",
-    "pytils": "^1.19.5",
+    "html-parse-regex": "0.6.4",
+    "pytils": "^1.29.3",
     "regex-finder": "^0.3.1"
   },
   "devDependencies": {}
