@@ -9,7 +9,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
  */
 
 function reverseDependency() {
-  eachVal(data.List, function (node) {
+  map(function (node) {
     if (node.params['xlink:href']) {
       var ref = node.params['xlink:href'].replace('#', '');
       var dep = data.map.id[ref];
@@ -18,7 +18,7 @@ function reverseDependency() {
         dep.link.in.push(node);
       }
     }
-  });
+  }, data.List);
 }
 
 function burnLine(node, state) {
@@ -34,19 +34,19 @@ function burnLine(node, state) {
   var fire = {};
   if (state == REMOVE) {
     // is blacklist > do remove cascate!
-    if (fireFrom !== 'out') fire.in = node.link.in;
-    if (fireFrom !== 'up') fire.down = node.link.down;
+    fireFrom !== 'out' && (fire.in = node.link.in);
+    fireFrom !== 'up' && (fire.down = node.link.down);
   } else {
     // is whitelist > do unremove cascate!
-    if (fireFrom !== 'down') fire.up = node.link.up;
-    if (fireFrom !== 'in') fire.out = node.link.out;
-    if (fireFrom !== 'up' && notAlone) fire.down = node.link.down;
+    fireFrom !== 'down' && (fire.up = node.link.up);
+    fireFrom !== 'in' && (fire.out = node.link.out);
+    fireFrom !== 'up' && notAlone && (fire.down = node.link.down);
   }
-  each(fire, function (fireTo, dir) {
-    eachVal(dir, function (node) {
-      burnLine(node, state, fireTo, notAlone, R);
-    });
-  });
+  map(function (dir, fireTo) {
+    map(function (node) {
+      return burnLine(node, state, fireTo, notAlone, R);
+    }, dir);
+  }, fire);
 }
 
 function stableTree(Objs) {
@@ -56,26 +56,30 @@ function stableTree(Objs) {
 
   if (R++ > 42) throw "Limit recursive exceeded in f.stableTree";
 
-  eachVal(Objs, function (node) {
-    if (origin == REMOVE) state = REMOVE;
-    if (state == REMOVE) setState(node, STAY);
-    _typeof(node.inner) === 'object' ? stableTree(node.inner, node.state, state, R) : null;
-  });
+  map(function (node) {
+    origin === REMOVE && (state = REMOVE);
+    state === REMOVE && setState(node, STAY);
+    if (_typeof(node.inner) === 'object') {
+      stableTree(node.inner, node.state, state, R);
+    }
+  }, Objs);
 }
 
 function setStateList() {
   var List = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
-  eachVal(data.List, function (node) {
-    setState(node, stateDict[!isWhitelist]);
-  });
-  eachVal(List, function (id) {
+  map(function (node) {
+    return setState(node, stateDict[!isWhitelist]);
+  }, data.List);
+  map(function (id) {
     var node = data.map.id[id];
-    if (node) burnLine(node, stateDict[isWhitelist]);
-  });
-  eachVal(data.List, function (node) {
-    if (inRule('noCut', node.tag)) burnLine(node, STAY);
-  });
+    node && burnLine(node, stateDict[isWhitelist]);
+  }, List);
+  map(function (node) {
+    if (inRule('noCut', node.tag)) {
+      burnLine(node, STAY);
+    }
+  }, data.List);
   stableTree(data.Objs);
 }
 
@@ -89,20 +93,22 @@ function inRule(sub, tag) {
 
 function createJoinList() {
   var preJoin = [];
-  eachVal(data.List, function (node) {
-    if (node.state === REMOVE) preJoin.push({ s: node.string.start, e: node.string.end });
-  });
+  map(function (node) {
+    if (node.state === REMOVE) {
+      preJoin.push({ s: node.string.start, e: node.string.end });
+    }
+  }, data.List);
   data.join = [];
   var oldE = 0;
-  eachVal(preJoin, function (pre) {
+  map(function (pre) {
     var Item = { s: oldE, e: pre.s };
     if (Item.s > Item.e) {
-      if (debug) console.warn({ l: data.join.length, Item: Item });
+      debug && console.warn({ l: data.join.length, Item: Item });
       throw '(mid) concat erro s > e';
     }
     data.join.push(Item);
     oldE = pre.e;
-  });
+  }, preJoin);
   var Item = { s: oldE, e: data.file.length };
   if (Item.s > Item.e) {
     if (debug) console.warn({ l: data.join.length, Item: Item });
@@ -113,9 +119,9 @@ function createJoinList() {
 
 function createNewSVG() {
   var svg = '';
-  eachVal(data.join, function (Part) {
+  map(function (Part) {
     svg += data.file.slice(Part.s, Part.e);
-  });
+  }, data.join);
   return svg;
 }
 
@@ -139,13 +145,13 @@ function processAnymatch() {
   var mapedId = getResume("ID");
   var mathList = [],
       notMathList = [];
-  eachVal(mapedId, function (id) {
+  map(function (id) {
     if (anymatch(anyList, id)) {
       mathList.push(id);
     } else {
       notMathList.push(id);
     }
-  });
+  }, mapedId);
 
   if (directoryList === undefined) {
     return mathList;
@@ -215,9 +221,9 @@ function main() {
 function getResume(from) {
   if (from === "ID") {
     var list = [];
-    each(data.map.id, function (id) {
-      list.push(id);
-    });
+    map(function (id) {
+      return list.push(id);
+    }, data.map.id);
     return list;
   } else {
     return data.resume;
@@ -239,8 +245,7 @@ var debug = true;
 var isWhitelist = void 0;
 
 var _require = require('pytils'),
-    each = _require.each,
-    eachVal = _require.eachVal;
+    map = _require.map;
 
 var anymatch = require('anymatch');
 

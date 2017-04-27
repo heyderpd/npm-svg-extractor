@@ -6,16 +6,18 @@
  */
 
 function reverseDependency() {
-  eachVal(data.List, node => {
-    if (node.params['xlink:href']) {
-      var ref = node.params['xlink:href'].replace('#', '')
-      let dep = data.map.id[ref]
-      if (dep){
-        node.link.out.push(dep)
-        dep.link.in.push(node)
+  map(
+    node => {
+      if (node.params['xlink:href']) {
+        var ref = node.params['xlink:href'].replace('#', '')
+        let dep = data.map.id[ref]
+        if (dep){
+          node.link.out.push(dep)
+          dep.link.in.push(node)
+        }
       }
-    }
-  })
+    },
+    data.List)
 }
 
 function burnLine(node, state, fireFrom = 'inner', notAlone = false, R = 0) {
@@ -29,47 +31,54 @@ function burnLine(node, state, fireFrom = 'inner', notAlone = false, R = 0) {
   setState(node, state)
   let fire = {}
   if (state == REMOVE){ // is blacklist > do remove cascate!
-    if (fireFrom !== 'out')  fire.in   = node.link.in
-    if (fireFrom !== 'up')   fire.down = node.link.down
+    fireFrom !== 'out' && (fire.in   = node.link.in)
+    fireFrom !== 'up'  && (fire.down = node.link.down)
   } else { // is whitelist > do unremove cascate!
-    if (fireFrom !== 'down') fire.up   = node.link.up
-    if (fireFrom !== 'in')   fire.out  = node.link.out
-    if (fireFrom !== 'up' && notAlone) fire.down = node.link.down
+    fireFrom !== 'down' && (fire.up   = node.link.up)
+    fireFrom !== 'in'   && (fire.out  = node.link.out)
+    fireFrom !== 'up' && notAlone && (fire.down = node.link.down)
   }
-  each(fire, (fireTo, dir) => {
-    eachVal(dir, node => {
-      burnLine(node, state, fireTo, notAlone, R)
-  }) })
+  map(
+    (dir, fireTo) => {
+      map(
+        node => burnLine(node, state, fireTo, notAlone, R),
+        dir)
+    },
+    fire)
 }
 
 function stableTree(Objs, origin = STAY, state = STAY, R = 0) {
   if (R++ > 42)
     throw "Limit recursive exceeded in f.stableTree"
 
-  eachVal(Objs, node => {
-    if (origin == REMOVE)
-      state = REMOVE
-    if (state == REMOVE)
-      setState(node, STAY)
-    typeof(node.inner) === 'object'
-      ? stableTree(node.inner, node.state, state, R)
-      : null
-  })
+  map(
+    node => {
+      origin === REMOVE && (state = REMOVE)
+      state  === REMOVE && setState(node, STAY)
+      if (typeof(node.inner) === 'object') {
+        stableTree(node.inner, node.state, state, R)
+      }
+    },
+    Objs)
 }
 
 function setStateList(List = []) {
-  eachVal(data.List, node => {
-    setState(node, stateDict[!isWhitelist])
-  })  
-  eachVal(List, id => {
-    let node = data.map.id[id]
-    if (node)
-      burnLine(node, stateDict[isWhitelist])
-  })
-  eachVal(data.List, node => {
-    if (inRule('noCut', node.tag))
-      burnLine(node, STAY)
-  })
+  map(
+    node => setState(node, stateDict[!isWhitelist]),
+    data.List)
+  map(
+    id => {
+      let node = data.map.id[id]
+      node && burnLine(node, stateDict[isWhitelist])
+    },
+    List)
+  map(
+    node => {
+      if (inRule('noCut', node.tag)) {
+        burnLine(node, STAY)
+      }
+    },
+    data.List)
   stableTree(data.Objs)
 }
 
@@ -86,22 +95,26 @@ function inRule(sub, tag) {
 
 function createJoinList() {
   let preJoin = []
-  eachVal(data.List, node => {
-    if (node.state === REMOVE)
-      preJoin.push({s: node.string.start, e: node.string.end})
-  })
+  map(
+    node => {
+      if (node.state === REMOVE) {
+        preJoin.push({s: node.string.start, e: node.string.end})
+      }
+    },
+    data.List)
   data.join = []
   let oldE = 0
-  eachVal(preJoin, pre => {
-    let Item = {s: oldE, e: pre.s}
-    if (Item.s > Item.e) {
-      if (debug)
-        console.warn({l:data.join.length, Item})
-      throw '(mid) concat erro s > e'
-    }
-    data.join.push(Item)
-    oldE = pre.e
-  })
+  map(
+    pre => {
+      let Item = {s: oldE, e: pre.s}
+      if (Item.s > Item.e) {
+        debug && console.warn({l:data.join.length, Item})
+        throw '(mid) concat erro s > e'
+      }
+      data.join.push(Item)
+      oldE = pre.e
+    },
+    preJoin)
   let Item = {s: oldE, e: data.file.length}
   if (Item.s > Item.e) {
     if (debug)
@@ -113,9 +126,11 @@ function createJoinList() {
 
 function createNewSVG() {
   let svg = ''
-  eachVal(data.join, Part => {
-    svg += data.file.slice(Part.s, Part.e)
-  })
+  map(
+    Part => {
+      svg += data.file.slice(Part.s, Part.e)
+    },
+    data.join)
   return svg
 }
 
@@ -136,13 +151,15 @@ function extract(list) {
 function processAnymatch(anyList = [], directoryList = undefined, extension = undefined) {
   let mapedId = getResume("ID")
   let mathList = [], notMathList = []
-  eachVal(mapedId, id => {
-    if( anymatch(anyList, id) ){
-      mathList.push(id)
-    } else {
-      notMathList.push(id)
-    }
-  })
+  map(
+    id => {
+      if( anymatch(anyList, id) ){
+        mathList.push(id)
+      } else {
+        notMathList.push(id)
+      }
+    },
+    mapedId)
 
   if (directoryList === undefined) {
     return mathList
@@ -191,8 +208,8 @@ function main(config = {}) {
   }
   if (debug) {
     crono = (+new Date() -start) /1000
-    let svgL = (config.svg.length /1000 ).toFixed(3)
-    let svgeL = ( svge.length /1000 ).toFixed(3)
+    let svgL  = (config.svg.length /1000).toFixed(3)
+    let svgeL = ( svge.length /1000).toFixed(3)
     console.log(`\nSVG extracted in ${crono} seconds\nWith a ${data.resume.mode} using ${config.list.length} itens.\nOriginal file have ${svgL} characters and new have ${svgeL} (decrease ${percent}%)`)
   }
   return svge
@@ -201,12 +218,12 @@ function main(config = {}) {
 function getResume(from) {
   if (from === "ID") {
     var list = []
-    each(data.map.id, id => {
-      list.push(id)
-    })
+    map(
+      id => list.push(id),
+      data.map.id)
     return list;
   } else {
-    return data.resume;    
+    return data.resume;
   }
 }
 
@@ -224,13 +241,13 @@ let data = { ready: false }
 let debug = true
 let isWhitelist
 
-const { each, eachVal } = require('pytils')
+const { map } = require('pytils')
 const  anymatch = require('anymatch');
 const { parse } = require('html-parse-regex')
 const { find }  = require('regex-finder')
 
 module.exports = {
-  init:      initialize, 
+  init:      initialize,
   extractor: main,
   resume:    getResume
 }
