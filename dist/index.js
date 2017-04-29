@@ -240,17 +240,21 @@ var data = { ready: false };
 var debug = true;
 var isWhitelist = void 0;
 
-var _require = require('pytils'),
-    map = _require.map,
-    keys = _require.keys;
+var _require = require('pytils');
+
+var map = _require.map;
+var keys = _require.keys;
 
 var anymatch = require('anymatch');
 
-var _require2 = require('html-parse-regex'),
-    parse = _require2.parse;
+var _require2 = require('html-parse-regex');
 
-var _require3 = require('regex-finder'),
-    find = _require3.find;
+var parse = _require2.parse;
+
+var _require3 = require('regex-finder');
+
+var find = _require3.find;
+
 
 module.exports = {
   init: initialize,

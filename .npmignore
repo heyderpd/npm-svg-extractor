@@ -1,6 +1,10 @@
 
 npm-debug.log
 
+.babelrc
+.gitignore
+.npmignore
+
 node_modules/*
 
 test/*
