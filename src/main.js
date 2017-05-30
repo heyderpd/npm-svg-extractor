@@ -5,7 +5,26 @@
  * ISC Licensed
  */
 
-function reverseDependency() {
+const STAY = 'STAY'
+const REMOVE = 'REMOVE'
+const stateDict = { true: STAY, STAY: true, false: REMOVE, REMOVE: false }
+const rules = {
+  noCut: {
+    'xml': true, '!doctype': true, 'metadata': true},
+  notAlone: {
+    symbol: true, g: true, metadata: true }
+}
+
+let data = { ready: false }
+let _debug = true
+let isWhitelist
+
+const { map, keys } = require('pytils')
+const anymatch  = require('anymatch')
+const { parse } = require('html-parse-regex')
+const { find }  = require('regex-finder')
+
+const reverseDependency = () => {
   map(
     node => {
       if (node.params['xlink:href']) {
@@ -20,7 +39,7 @@ function reverseDependency() {
     data.List)
 }
 
-function burnLine(node, state, fireFrom = 'inner', notAlone = false, R = 0) {
+const burnLine = (node, state, fireFrom = 'inner', notAlone = false, R = 0) => {
   if (R++ > 42)
     throw "Limit recursive exceeded in f.burnLine"
   if (!node)
@@ -47,7 +66,7 @@ function burnLine(node, state, fireFrom = 'inner', notAlone = false, R = 0) {
     fire)
 }
 
-function stableTree(Objs, origin = STAY, state = STAY, R = 0) {
+const stableTree = (Objs, origin = STAY, state = STAY, R = 0) => {
   if (R++ > 42)
     throw "Limit recursive exceeded in f.stableTree"
 
@@ -62,7 +81,7 @@ function stableTree(Objs, origin = STAY, state = STAY, R = 0) {
     Objs)
 }
 
-function setStateList(List = []) {
+const setStateList = (List = []) => {
   map(
     node => setState(node, stateDict[!isWhitelist]),
     data.List)
@@ -82,18 +101,18 @@ function setStateList(List = []) {
   stableTree(data.Objs)
 }
 
-function setState(node, state) {
+const setState = (node, state) => {
   if (!inRule('noCut', node.tag))
     node.state = state
   else
     node.state = STAY
 }
 
-function inRule(sub, tag) {
+const inRule = (sub, tag) => {
   return typeof(tag.toLowerCase) === 'function' && rules[sub] !== undefined && rules[sub][tag.toLowerCase()]
 }
 
-function createJoinList() {
+const createJoinList = () => {
   let preJoin = []
   map(
     node => {
@@ -108,7 +127,7 @@ function createJoinList() {
     pre => {
       let Item = {s: oldE, e: pre.s}
       if (Item.s > Item.e) {
-        debug && console.warn({l:data.join.length, Item})
+        _debug && console.warn({l:data.join.length, Item})
         throw '(mid) concat erro s > e'
       }
       data.join.push(Item)
@@ -117,14 +136,14 @@ function createJoinList() {
     preJoin)
   let Item = {s: oldE, e: data.file.length}
   if (Item.s > Item.e) {
-    if (debug)
+    if (_debug)
       console.warn({l:data.join.length, Item})
     throw '(end) concat erro s > e'
   }
   data.join.push(Item)
 }
 
-function createNewSVG() {
+const createNewSVG = () => {
   let svg = ''
   map(
     Part => {
@@ -134,13 +153,7 @@ function createNewSVG() {
   return svg
 }
 
-function initialize(svg) {
-  data = Object.assign({ join: [], ready: false }, parse(svg) )
-  reverseDependency()
-  data.ready = true
-}
-
-function extract(list) {
+const extract = list => {
   setStateList(list)
   createJoinList()
   return createNewSVG()
@@ -148,8 +161,8 @@ function extract(list) {
     .replace(/\n[ \t\n]+/gm, '\n')
 }
 
-function processAnymatch(anyList = [], directoryList = undefined, extension = undefined) {
-  let mapedId = getResume('ID')
+const processAnymatch = (anyList = [], directoryList = undefined, extension = undefined) => {
+  let mapedId = resume('ID')
   let mathList = [], notMathList = []
   map(
     id => {
@@ -166,84 +179,68 @@ function processAnymatch(anyList = [], directoryList = undefined, extension = un
   } else {
     const resumeOf = isWhitelist ? 'FOUND' : 'NOT_FOUND'
     const dirList = find({
-                          list: notMathList,
-                          extension: extension,
-                          path: directoryList,
-                          getResumeOf: resumeOf,
-                          pattern: '[^\\w-](__LIST__)[^\\w-]'
-                         })
+        list: notMathList,
+        extension: extension,
+        path: directoryList,
+        getResumeOf: resumeOf,
+        pattern: '[^\\w-](__LIST__)[^\\w-]'
+      })
     return mathList.concat(dirList)
   }
 }
 
-function main(config = {}) {
+export const init = svg => {
+  data = Object.assign({ join: [], ready: false }, parse(svg) )
+  reverseDependency()
+  data.ready = true
+}
+
+export const extractor = (config = {}) => {
+  const { whitelist, directory, extension, list, svg, ready, debug } = config
   // verify input
-  isWhitelist = typeof(config.whitelist) !== 'boolean' ? true : config.whitelist
-  if (config.directory === undefined && config.list === undefined) { throw 'extractor: need param "list" OR "directory" defined, both are undefined' }
-  if (config.list !== undefined && !Array.isArray(config.list)) { throw 'extractor: param "list" must be a array' }
-  if (config.svg  === undefined && !data.ready) { throw 'extractor: param "svg" is undefined' }
+  isWhitelist = typeof(whitelist) !== 'boolean' ? true : whitelist
+  _debug = typeof(debug) !== 'boolean' ? true : debug
+  if (directory === undefined && list === undefined) { throw 'extractor: need param "list" OR "directory" defined, both are undefined' }
+  if (list !== undefined && !Array.isArray(list)) { throw 'extractor: param "list" must be a array' }
+  if (svg  === undefined && !data.ready) { throw 'extractor: param "svg" is undefined' }
 
   // initialize
+  _debug = debug
   let start, crono
-  if (debug) { start = +new Date() }
-  if (!data.ready || config.svg !== undefined) { initialize(config.svg) }
+  if (_debug) { start = +new Date() }
+  if (!data.ready || svg !== undefined) { init(svg) }
 
   // create list from found in directory
-  const extractList = processAnymatch(config.list,
-                                      config.directory,
-                                      config.extension)
+  const extractList = processAnymatch(
+    list,
+    directory,
+    extension)
 
   // extract
   const svge = extract(extractList)
 
   // set resume
-  let percent = Math.floor(svge.length /config.svg.length *10000) /100
+  let percent = Math.floor(svge.length /svg.length *10000) /100
   percent = Math.floor((100 -percent) *100) /100
   data.resume = {
     mode: (isWhitelist) ? 'whitelist' : 'blacklist',
-    list: config.list.length,
-    svg:  config.svg.length,
+    list: list.length,
+    svg:  svg.length,
     svge: svge.length,
     percent: percent
   }
-  if (debug) {
+  if (_debug) {
     crono = (+new Date() -start) /1000
-    let svgL  = (config.svg.length /1000).toFixed(3)
+    let svgL  = (svg.length /1000).toFixed(3)
     let svgeL = ( svge.length /1000).toFixed(3)
-    console.log(`\nSVG extracted in ${crono} seconds\nWith a ${data.resume.mode} using ${config.list.length} itens.\nOriginal file have ${svgL} characters and new have ${svgeL} (decrease ${percent}%)`)
+    console.log(`
+      SVG extracted in ${crono} seconds
+      With a ${data.resume.mode} using ${list.length} itens.
+      Original file have ${svgL} characters and new have ${svgeL} (decrease ${percent}%)`)
   }
   return svge
 }
 
-function getResume(from) {
-  if (from === 'ID') {
-    return keys(data.map.id);
-  } else {
-    return data.resume;
-  }
-}
-
-const STAY = 'STAY'
-const REMOVE = 'REMOVE'
-const stateDict = { true: STAY, STAY: true, false: REMOVE, REMOVE: false }
-const rules = {
-  noCut: {
-    'xml': true, '!doctype': true, 'metadata': true},
-  notAlone: {
-    symbol: true, g: true, metadata: true }
-}
-
-let data = { ready: false }
-let debug = true
-let isWhitelist
-
-const { map, keys } = require('pytils')
-const  anymatch = require('anymatch');
-const { parse } = require('html-parse-regex')
-const { find }  = require('regex-finder')
-
-module.exports = {
-  init:      initialize,
-  extractor: main,
-  resume:    getResume
-}
+export const resume = from => from === 'ID'
+  ? keys(data.map.id)
+  : data.resume

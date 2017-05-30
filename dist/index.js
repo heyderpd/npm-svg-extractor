@@ -1,5 +1,9 @@
 'use strict';
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 /*!
@@ -8,7 +12,33 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
  * ISC Licensed
  */
 
-function reverseDependency() {
+var STAY = 'STAY';
+var REMOVE = 'REMOVE';
+var stateDict = { true: STAY, STAY: true, false: REMOVE, REMOVE: false };
+var rules = {
+  noCut: {
+    'xml': true, '!doctype': true, 'metadata': true },
+  notAlone: {
+    symbol: true, g: true, metadata: true }
+};
+
+var data = { ready: false };
+var _debug = true;
+var isWhitelist = void 0;
+
+var _require = require('pytils'),
+    map = _require.map,
+    keys = _require.keys;
+
+var anymatch = require('anymatch');
+
+var _require2 = require('html-parse-regex'),
+    parse = _require2.parse;
+
+var _require3 = require('regex-finder'),
+    find = _require3.find;
+
+var reverseDependency = function reverseDependency() {
   map(function (node) {
     if (node.params['xlink:href']) {
       var ref = node.params['xlink:href'].replace('#', '');
@@ -19,9 +49,9 @@ function reverseDependency() {
       }
     }
   }, data.List);
-}
+};
 
-function burnLine(node, state) {
+var burnLine = function burnLine(node, state) {
   var fireFrom = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'inner';
   var notAlone = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
   var R = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
@@ -47,9 +77,9 @@ function burnLine(node, state) {
       return burnLine(node, state, fireTo, notAlone, R);
     }, dir);
   }, fire);
-}
+};
 
-function stableTree(Objs) {
+var stableTree = function stableTree(Objs) {
   var origin = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : STAY;
   var state = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : STAY;
   var R = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
@@ -63,9 +93,9 @@ function stableTree(Objs) {
       stableTree(node.inner, node.state, state, R);
     }
   }, Objs);
-}
+};
 
-function setStateList() {
+var setStateList = function setStateList() {
   var List = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
   map(function (node) {
@@ -81,17 +111,17 @@ function setStateList() {
     }
   }, data.List);
   stableTree(data.Objs);
-}
+};
 
-function setState(node, state) {
+var setState = function setState(node, state) {
   if (!inRule('noCut', node.tag)) node.state = state;else node.state = STAY;
-}
+};
 
-function inRule(sub, tag) {
+var inRule = function inRule(sub, tag) {
   return typeof tag.toLowerCase === 'function' && rules[sub] !== undefined && rules[sub][tag.toLowerCase()];
-}
+};
 
-function createJoinList() {
+var createJoinList = function createJoinList() {
   var preJoin = [];
   map(function (node) {
     if (node.state === REMOVE) {
@@ -103,7 +133,7 @@ function createJoinList() {
   map(function (pre) {
     var Item = { s: oldE, e: pre.s };
     if (Item.s > Item.e) {
-      debug && console.warn({ l: data.join.length, Item: Item });
+      _debug && console.warn({ l: data.join.length, Item: Item });
       throw '(mid) concat erro s > e';
     }
     data.join.push(Item);
@@ -111,38 +141,32 @@ function createJoinList() {
   }, preJoin);
   var Item = { s: oldE, e: data.file.length };
   if (Item.s > Item.e) {
-    if (debug) console.warn({ l: data.join.length, Item: Item });
+    if (_debug) console.warn({ l: data.join.length, Item: Item });
     throw '(end) concat erro s > e';
   }
   data.join.push(Item);
-}
+};
 
-function createNewSVG() {
+var createNewSVG = function createNewSVG() {
   var svg = '';
   map(function (Part) {
     svg += data.file.slice(Part.s, Part.e);
   }, data.join);
   return svg;
-}
+};
 
-function initialize(svg) {
-  data = Object.assign({ join: [], ready: false }, parse(svg));
-  reverseDependency();
-  data.ready = true;
-}
-
-function extract(list) {
+var extract = function extract(list) {
   setStateList(list);
   createJoinList();
   return createNewSVG().replace(/[\r\n]/gm, '\n').replace(/\n[ \t\n]+/gm, '\n');
-}
+};
 
-function processAnymatch() {
+var processAnymatch = function processAnymatch() {
   var anyList = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
   var directoryList = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
   var extension = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
 
-  var mapedId = getResume('ID');
+  var mapedId = resume('ID');
   var mathList = [],
       notMathList = [];
   map(function (id) {
@@ -166,98 +190,73 @@ function processAnymatch() {
     });
     return mathList.concat(dirList);
   }
-}
+};
 
-function main() {
+var init = exports.init = function init(svg) {
+  data = Object.assign({ join: [], ready: false }, parse(svg));
+  reverseDependency();
+  data.ready = true;
+};
+
+var extractor = exports.extractor = function extractor() {
   var config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
+  var whitelist = config.whitelist,
+      directory = config.directory,
+      extension = config.extension,
+      list = config.list,
+      svg = config.svg,
+      ready = config.ready,
+      debug = config.debug;
   // verify input
-  isWhitelist = typeof config.whitelist !== 'boolean' ? true : config.whitelist;
-  if (config.directory === undefined && config.list === undefined) {
+
+  isWhitelist = typeof whitelist !== 'boolean' ? true : whitelist;
+  _debug = typeof debug !== 'boolean' ? true : debug;
+  if (directory === undefined && list === undefined) {
     throw 'extractor: need param "list" OR "directory" defined, both are undefined';
   }
-  if (config.list !== undefined && !Array.isArray(config.list)) {
+  if (list !== undefined && !Array.isArray(list)) {
     throw 'extractor: param "list" must be a array';
   }
-  if (config.svg === undefined && !data.ready) {
+  if (svg === undefined && !data.ready) {
     throw 'extractor: param "svg" is undefined';
   }
 
   // initialize
+  _debug = debug;
   var start = void 0,
       crono = void 0;
-  if (debug) {
+  if (_debug) {
     start = +new Date();
   }
-  if (!data.ready || config.svg !== undefined) {
-    initialize(config.svg);
+  if (!data.ready || svg !== undefined) {
+    init(svg);
   }
 
   // create list from found in directory
-  var extractList = processAnymatch(config.list, config.directory, config.extension);
+  var extractList = processAnymatch(list, directory, extension);
 
   // extract
   var svge = extract(extractList);
 
   // set resume
-  var percent = Math.floor(svge.length / config.svg.length * 10000) / 100;
+  var percent = Math.floor(svge.length / svg.length * 10000) / 100;
   percent = Math.floor((100 - percent) * 100) / 100;
   data.resume = {
     mode: isWhitelist ? 'whitelist' : 'blacklist',
-    list: config.list.length,
-    svg: config.svg.length,
+    list: list.length,
+    svg: svg.length,
     svge: svge.length,
     percent: percent
   };
-  if (debug) {
+  if (_debug) {
     crono = (+new Date() - start) / 1000;
-    var svgL = (config.svg.length / 1000).toFixed(3);
+    var svgL = (svg.length / 1000).toFixed(3);
     var svgeL = (svge.length / 1000).toFixed(3);
-    console.log('\nSVG extracted in ' + crono + ' seconds\nWith a ' + data.resume.mode + ' using ' + config.list.length + ' itens.\nOriginal file have ' + svgL + ' characters and new have ' + svgeL + ' (decrease ' + percent + '%)');
+    console.log('\n      SVG extracted in ' + crono + ' seconds\n      With a ' + data.resume.mode + ' using ' + list.length + ' itens.\n      Original file have ' + svgL + ' characters and new have ' + svgeL + ' (decrease ' + percent + '%)');
   }
   return svge;
-}
-
-function getResume(from) {
-  if (from === 'ID') {
-    return keys(data.map.id);
-  } else {
-    return data.resume;
-  }
-}
-
-var STAY = 'STAY';
-var REMOVE = 'REMOVE';
-var stateDict = { true: STAY, STAY: true, false: REMOVE, REMOVE: false };
-var rules = {
-  noCut: {
-    'xml': true, '!doctype': true, 'metadata': true },
-  notAlone: {
-    symbol: true, g: true, metadata: true }
 };
 
-var data = { ready: false };
-var debug = true;
-var isWhitelist = void 0;
-
-var _require = require('pytils');
-
-var map = _require.map;
-var keys = _require.keys;
-
-var anymatch = require('anymatch');
-
-var _require2 = require('html-parse-regex');
-
-var parse = _require2.parse;
-
-var _require3 = require('regex-finder');
-
-var find = _require3.find;
-
-
-module.exports = {
-  init: initialize,
-  extractor: main,
-  resume: getResume
+var resume = exports.resume = function resume(from) {
+  return from === 'ID' ? keys(data.map.id) : data.resume;
 };
