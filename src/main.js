@@ -1,16 +1,14 @@
-
-/*!
- * svg-extractor
- * Copyright (c) 2016 heyderpd <heyderpd@gmail.com>
- * ISC Licensed
- */
+import { map, keys } from 'pytils'
+import anymatch from 'anymatch'
+import parse from 'html-parse-regex'
+import { find } from 'regex-finder'
 
 const STAY = 'STAY'
 const REMOVE = 'REMOVE'
 const stateDict = { true: STAY, STAY: true, false: REMOVE, REMOVE: false }
 const rules = {
   noCut: {
-    'xml': true, '!doctype': true, 'metadata': true},
+    '?xml': true, '!doctype': true, 'metadata': true},
   notAlone: {
     symbol: true, g: true, metadata: true }
 }
@@ -19,24 +17,32 @@ let data = { ready: false }
 let _debug = true
 let isWhitelist
 
-const { map, keys } = require('pytils')
-const anymatch  = require('anymatch')
-const { parse } = require('html-parse-regex')
-const { find }  = require('regex-finder')
+const createInOutLink = () => {
+  map(
+    node => {
+      if (node) {
+        node.link.out = []
+        node.link.in = []
+      }
+    },
+    data.list)
+}
 
 const reverseDependency = () => {
   map(
     node => {
-      if (node.params['xlink:href']) {
-        var ref = node.params['xlink:href'].replace('#', '')
-        let dep = data.map.id[ref]
-        if (dep){
-          node.link.out.push(dep)
-          dep.link.in.push(node)
+      if (node && !node.text) {
+        const ref = node.attrs['xlink:href']
+        if (ref) {
+          let dep = data.shortcut.id[ref.replace('#', '')]
+          if (dep){
+            node.link.out.push(dep)
+            dep.link.in.push(node)
+          }
         }
       }
     },
-    data.List)
+    data.list)
 }
 
 const burnLine = (node, state, fireFrom = 'inner', notAlone = false, R = 0) => {
@@ -45,17 +51,17 @@ const burnLine = (node, state, fireFrom = 'inner', notAlone = false, R = 0) => {
   if (!node)
     return
 
-  if (inRule('notAlone', node.tag))
+  if (inRule('notAlone', node))
     notAlone = true
   setState(node, state)
   let fire = {}
   if (state == REMOVE){ // is blacklist > do remove cascate!
     fireFrom !== 'out' && (fire.in   = node.link.in)
-    fireFrom !== 'up'  && (fire.down = node.link.down)
+    fireFrom !== 'up'  && (fire.down = node.link.childs)
   } else { // is whitelist > do unremove cascate!
-    fireFrom !== 'down' && (fire.up   = node.link.up)
+    fireFrom !== 'down' && (fire.up   = [ node.link.father ])
     fireFrom !== 'in'   && (fire.out  = node.link.out)
-    fireFrom !== 'up' && notAlone && (fire.down = node.link.down)
+    fireFrom !== 'up' && notAlone && (fire.down = node.link.childs)
   }
   map(
     (dir, fireTo) => {
@@ -69,65 +75,83 @@ const burnLine = (node, state, fireFrom = 'inner', notAlone = false, R = 0) => {
 const stableTree = (Objs, origin = STAY, state = STAY, R = 0) => {
   if (R++ > 42)
     throw "Limit recursive exceeded in f.stableTree"
+  const childs = Objs.link.childs
+  if (childs && childs.length > 0) {
+    map(
+      node => {
+        origin === REMOVE && (state = REMOVE)
+        state  === REMOVE && setState(node, STAY)
+        stableTree(node, node.state, state, R)
+      },
+      childs)
+  }
+}
 
-  map(
-    node => {
-      origin === REMOVE && (state = REMOVE)
-      state  === REMOVE && setState(node, STAY)
-      if (typeof(node.inner) === 'object') {
-        stableTree(node.inner, node.state, state, R)
-      }
-    },
-    Objs)
+const fixRootText = () => {
+  data.tree.link.childs
+    .map(node => node & node.text && setState(node, STAY))
 }
 
 const setStateList = (List = []) => {
   map(
     node => setState(node, stateDict[!isWhitelist]),
-    data.List)
+    data.list)
   map(
     id => {
-      let node = data.map.id[id]
+      let node = data.shortcut.id[id]
       node && burnLine(node, stateDict[isWhitelist])
     },
     List)
   map(
     node => {
-      if (inRule('noCut', node.tag)) {
+      if (inRule('noCut', node)) {
         burnLine(node, STAY)
       }
     },
-    data.List)
-  stableTree(data.Objs)
+    data.list)
+  fixRootText()
+  stableTree(data.tree)
 }
 
 const setState = (node, state) => {
-  if (!inRule('noCut', node.tag))
+  if (!inRule('noCut', node))
     node.state = state
   else
     node.state = STAY
 }
 
-const inRule = (sub, tag) => {
-  return typeof(tag.toLowerCase) === 'function' && rules[sub] !== undefined && rules[sub][tag.toLowerCase()]
+const inRule = (sub, node) => node
+  && !node.text
+  && typeof(node.tag) === 'string'
+  && rules[sub][node.tag.toLowerCase()]
+
+const sortByStart = (a, b) => {
+  return (a.start < b.start)
+    ? -1
+    : ((a.start > b.start)
+      ? 1
+      : 0)
 }
 
+const sortList = () => data.list = data.list.sort(sortByStart)
+
 const createJoinList = () => {
+  sortList()
   let preJoin = []
   map(
     node => {
       if (node.state === REMOVE) {
-        preJoin.push({s: node.string.start, e: node.string.end})
+        preJoin.push({s: node.start, e: node.end})
       }
     },
-    data.List)
+    data.list)
   data.join = []
   let oldE = 0
   map(
     pre => {
       let Item = {s: oldE, e: pre.s}
       if (Item.s > Item.e) {
-        _debug && console.warn({l:data.join.length, Item})
+        true && console.warn({l:data.join.length, Item})
         throw '(mid) concat erro s > e'
       }
       data.join.push(Item)
@@ -158,7 +182,7 @@ const extract = list => {
   createJoinList()
   return createNewSVG()
     .replace(/[\r\n]/gm, '\n')
-    .replace(/\n[ \t\n]+/gm, '\n')
+    .replace(/\n[\s\n]+/gm, '\n')
 }
 
 const processAnymatch = (anyList = [], directoryList = undefined, extension = undefined) => {
@@ -190,7 +214,9 @@ const processAnymatch = (anyList = [], directoryList = undefined, extension = un
 }
 
 export const init = svg => {
-  data = Object.assign({ join: [], ready: false }, parse(svg) )
+  data = parse(svg)
+  data.file = svg
+  createInOutLink()
   reverseDependency()
   data.ready = true
 }
@@ -242,5 +268,5 @@ export const extractor = (config = {}) => {
 }
 
 export const resume = from => from === 'ID'
-  ? keys(data.map.id)
+  ? keys(data.shortcut.id)
   : data.resume

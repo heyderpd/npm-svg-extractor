@@ -2,7 +2,8 @@
 Create new svg file from another with a whitelist or blacklist of required id.
 Use in build to create small svg files.
 
-## All process have a avg of 22 mileseconds!!!
+## USING NEW PARSER - MANY FIXED BUGS!!
+## TWICE AS FAST - All process have a avg of 11 mileseconds!!!
 ```javascript
 npm install svg-extractor
 ```

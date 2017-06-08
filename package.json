@@ -1,14 +1,13 @@
 {
   "license": "MIT",
   "name": "svg-extractor",
-  "version": "0.7.5",
+  "version": "1.0.0",
   "description": "SVG extractor module",
   "main": "dist/index.js",
   "scripts": {
     "transpile": "babel src/ --out-file dist/index.js",
     "test": "mocha --compilers js:babel-register --reporter spec 'test/*.spec.js'",
-    "build": "npm run transpile && npm run test",
-    "web": "webpack --config"
+    "build": "npm run transpile && npm run test"
   },
   "keywords": [
     "svg",
@@ -17,7 +16,9 @@
     "reductor",
     "remove",
     "html",
-    "xml"
+    "xml",
+    "regex",
+    "fast"
   ],
   "author": "NPM svg extractor <heyderpd@gmail.com> (http://heyderpd.github.io)",
   "repository": {
@@ -29,16 +30,15 @@
   },
   "dependencies": {
     "anymatch": "^1.3.0",
-    "html-parse-regex": "^0.7.3",
+    "html-parse-regex": "^1.0.1",
     "pytils": "^1.29.3",
     "regex-finder": "^0.3.1"
   },
   "devDependencies": {
-    "babel-cli": "^6.16.0",
-    "babel-core": "^6.17.0",
-    "babel-polyfill": "^6.16.0",
-    "babel-preset-es2015": "^6.16.0",
-    "babel-register": "^6.16.3",
-    "webpack": "^1.13.2"
+    "babel-cli": "^6.24.1",
+    "babel-core": "^6.24.1",
+    "babel-polyfill": "^6.23.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-register": "^6.24.1"
   }
 }
